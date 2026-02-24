@@ -54,7 +54,6 @@ describe("SaveAsset", function () {
 	})
 
 	/* ================= ERC20 DEPOSIT ================= */
-
 	describe("ERC20 Deposit", function () {
 		it("Should allow user to deposit ERC20", async function () {
 			const { saveAsset, token, user } = await loadFixture(deployFixture)
