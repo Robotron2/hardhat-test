@@ -1,43 +1,95 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.30;
+pragma solidity ^0.8.3;
+import {IERC20} from "./IERC20.sol";
 
-contract ERC20 {
-    string constant NAME = "SCHTOKEN";
-    string constant SYMBOL = "SCH";
+contract ERC20 is IERC20 {
+    string Name;
+    string Symbol;
     uint8 constant DECIMAL = 18;
-    uint256 _totalSupply;
+    address owner;
+    uint256 total_supply;
 
-    mapping(address _certainAddress => uint256 _balanceOfThatAddress) private balances;
-    mapping(address _owner => mapping(address _spender => uint256 _amountAllowedToSpend)) private allowances;
-
+    mapping(address => uint256) balances;
+    mapping(address => mapping(address => uint256)) allowances;
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
 
-    function name() public pure returns (string memory) {
-        return NAME;
+    constructor(string memory _name, string memory _symbol, uint256 _totalSupply) {
+        Name = _name;
+        Symbol = _symbol;
+        owner = msg.sender;
+
+        _mint(owner, _totalSupply);
     }
 
-    function symbol() public pure returns (string memory) {
-        return SYMBOL;
+    function name() external view returns (string memory) {
+        return Name;
     }
 
-    function decimal() public pure returns (uint8) {
+    function symbol() external view returns (string memory) {
+        return Symbol;
+    }
+
+    function decimals() external pure returns (uint8) {
         return DECIMAL;
     }
 
-    function totalSupply() public view returns (uint256) {
-        return _totalSupply;
+    function totalSupply() external view returns (uint256) {
+        return total_supply;
     }
 
-    function balanceOf(address _owner) public view returns (uint256 balance) {
+    function balanceOf(address _owner) external view returns (uint256 balance) {
         return balances[_owner];
     }
 
-    function approve(address _spender, uint256 _value) public returns (bool) {
-        //msg.sender is giving _spender some allowance to spend on their behalf
-        require(_spender != address(0), "Can't give allowance to address zero");
+    function allowance(address _owner, address _spender) external view returns (uint256 remaining) {
+        return allowances[_owner][_spender];
+    }
 
-        require(_value > 0, "Can't approve zero value");
+    function _mint(address _owner, uint256 _amount) internal {
+        require(_owner != address(0), "Can't transfer to address zero");
+        total_supply = total_supply + _amount;
+        balances[_owner] = balances[_owner] + _amount;
+    }
+
+    function transfer(address _to, uint256 _value) external returns (bool success) {
+        require(_to != address(0), "Can't transfer to address zero");
+
+        require(_value > 0, "Can't send zero value");
+
+        require(balances[msg.sender] >= _value, "Insufficient funds");
+
+        balances[msg.sender] = balances[msg.sender] - _value;
+
+        balances[_to] = balances[_to] + _value;
+
+        emit Transfer(msg.sender, _to, _value);
+
+        return true;
+    }
+
+    function transferFrom(address _from, address _to, uint256 _value) external returns (bool success) {
+        require(_to != address(0), "Can't transfer to address zero");
+
+        require(_value > 0, "Can't send zero value");
+
+        require(balances[_from] >= _value, "allowance is greater than your balance");
+
+        require(_value <= allowances[_from][msg.sender], "Insufficient allowance");
+
+        balances[_from] = balances[_from] - _value;
+
+        balances[_to] = balances[_to] + _value;
+
+        allowances[_from][msg.sender] = allowances[_from][msg.sender] - _value;
+
+        return true;
+    }
+
+    function approve(address _spender, uint256 _value) external returns (bool success) {
+        require(_spender != address(0), "Can't transfer to address zero");
+
+        require(_value > 0, "Can't send zero value");
 
         require(balances[msg.sender] >= _value, "allowance is greater than your balance");
 
@@ -46,49 +98,5 @@ contract ERC20 {
         emit Approval(msg.sender, _spender, _value);
 
         return true;
-    }
-
-    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {
-        //return the value of the allowance given to a spender
-        return allowances[_owner][_spender];
-    }
-
-    function transfer(address _to, uint256 _value) public returns (bool) {
-        //move token from one address balance to another
-        require(_to != address(0), "Can't transfer to address zero");
-
-        require(_value > 0, "Can't send zero value");
-
-        require(balances[msg.sender] >= _value, "Insufficient funds");
-
-        balances[msg.sender] = balances[msg.sender] - _value; //deduct certain amount of token from the person initiating the transfer
-
-        balances[_to] = balances[_to] + _value; //add the deducted amount of token to the recipient's balance.
-
-        emit Transfer(msg.sender, _to, _value);
-
-        return true;
-    }
-
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        require(_to != address(0), "Can't transfer to address zero");
-
-        require(_value > 0, "Can't send zero value");
-
-        require(balances[_from] >= _value, "amount is greater than your balance");
-
-        require(_value <= allowances[_from][msg.sender], "Insufficient allowance");
-
-        allowances[_from][msg.sender] = allowances[_from][msg.sender] - _value;
-        balances[_from] = balances[_from] - _value;
-        balances[_to] = balances[_to] + _value;
-
-        return true;
-    }
-
-    function mint(address _owner, uint256 _amount) external {
-        require(_owner != address(0), "Can't transfer to address zero");
-        _totalSupply = _totalSupply + _amount;
-        balances[_owner] = balances[_owner] + _amount;
     }
 }
