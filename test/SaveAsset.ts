@@ -74,4 +74,40 @@ describe("SaveAsset", function () {
 			expect(saved).to.equal(amount)
 		})
 	})
+
+	describe("ERC20 Withdraw", function () {
+		it("Should withdraw ERC20 if user has balance", async function () {
+			const { saveAsset, token, user } = await loadFixture(deployFixture)
+			//Transfer token to user from owner
+			//User to approve saveAsset contract
+			//saveAsset help user transfer certain saving amount
+			//User calls saveAsset.withdraw()
+			//Expect the userSavings == initialBalance - amountWithdrawn
+			const _amountAirdroped = hre.ethers.parseEther("100")
+			const _amountApproved = hre.ethers.parseEther("100")
+			const _amountToWithdraw = hre.ethers.parseEther("100")
+
+			// transfer ERC20 from owner
+			await token.transfer(user.address, _amountAirdroped)
+			const initialBalance = await token.balanceOf(user.address)
+			console.log(`InitialBal: ${initialBalance}`)
+
+			// User to Approve saveAsset
+			await token.connect(user).approve(await saveAsset.getAddress(), _amountApproved)
+			console.log(`Allowance: ${await token.allowance(user.address, await saveAsset.getAddress())}`)
+
+			// deposit - saveAsset to deposit allowance
+			await saveAsset.connect(user).depositERC20(_amountApproved)
+
+			const currentBalance = await token.balanceOf(user.address)
+
+			// //withdraw - user calls withdraw
+			await saveAsset.connect(user).withdrawERC20(_amountToWithdraw)
+
+			const difference = initialBalance - _amountToWithdraw
+			console.log(`CurrentBal: ${currentBalance}`)
+			console.log(`Difference: ${difference}`)
+			expect(currentBalance).to.equal(difference)
+		})
+	})
 })
