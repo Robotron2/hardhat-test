@@ -68,4 +68,20 @@ describe("ERC20", function () {
 			await expect(token.connect(user).transfer(user.address, bigAmount)).to.be.revertedWith("Insufficient funds")
 		})
 	})
+
+	//   /* ================= APPROVE ================= */
+
+	describe("ERC20 approve", function () {
+		it("Should approve allowance correctly", async function () {
+			const { token, owner, spender } = await loadFixture(deployFixture)
+
+			const amount = hre.ethers.parseEther("50")
+
+			await expect(token.approve(spender.address, amount))
+				.to.emit(token, "Approval")
+				.withArgs(owner.address, spender.address, amount)
+
+			expect(await token.allowance(owner.address, spender.address)).to.equal(amount)
+		})
+	})
 })
