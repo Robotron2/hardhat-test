@@ -84,4 +84,33 @@ describe("ERC20", function () {
 			expect(await token.allowance(owner.address, spender.address)).to.equal(amount)
 		})
 	})
+
+	/* ================= TRANSFER FROM ================= */
+
+	describe("ERC20 transferFrom", function () {
+		it("Should transfer using allowance", async function () {
+			const { token, owner, user, spender } = await loadFixture(deployFixture)
+
+			const amount = hre.ethers.parseEther("100")
+
+			// approve spender
+			await token.approve(spender.address, amount)
+
+			// spender transfers from owner to user
+			await token.connect(spender).transferFrom(owner.address, user.address, amount)
+
+			expect(await token.balanceOf(user.address)).to.equal(amount)
+			expect(await token.allowance(owner.address, spender.address)).to.equal(0)
+		})
+
+		it("Should revert if no allowance", async function () {
+			const { token, owner, user, spender } = await loadFixture(deployFixture)
+
+			const amount = hre.ethers.parseEther("100")
+
+			await expect(token.connect(spender).transferFrom(owner.address, user.address, amount)).to.be.revertedWith(
+				"Insufficient allowance",
+			)
+		})
+	})
 })
