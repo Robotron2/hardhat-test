@@ -53,7 +53,27 @@ describe("SaveAsset", function () {
 		})
 	})
 
+	/* ================= ETH WITHDRAWAL ================= */
+
+	describe("ETH Withdrawal", function () {
+		it("Should allow user to withdraw ETH", async function () {
+			const { saveAsset, user } = await loadFixture(deployFixture)
+
+			const depositAmount = hre.ethers.parseEther("2")
+			const withdrawalAmount = hre.ethers.parseEther("2")
+
+			await saveAsset.connect(user).deposit({ value: depositAmount })
+			const initialBalance = await saveAsset.connect(user).getUserSavings()
+
+			await saveAsset.connect(user).withdraw(withdrawalAmount)
+
+			const currrentBalance = await saveAsset.connect(user).getUserSavings()
+			expect(initialBalance).to.equal(currrentBalance + withdrawalAmount)
+		})
+	})
+
 	/* ================= ERC20 DEPOSIT ================= */
+
 	describe("ERC20 Deposit", function () {
 		it("Should allow user to deposit ERC20", async function () {
 			const { saveAsset, token, user } = await loadFixture(deployFixture)
@@ -74,6 +94,8 @@ describe("SaveAsset", function () {
 			expect(saved).to.equal(amount)
 		})
 	})
+
+	/* ================= ERC20 WITHDRAW ================= */
 
 	describe("ERC20 Withdraw", function () {
 		it("Should withdraw ERC20 if user has balance", async function () {
@@ -99,15 +121,18 @@ describe("SaveAsset", function () {
 			// deposit - saveAsset to deposit allowance
 			await saveAsset.connect(user).depositERC20(_amountApproved)
 
-			const currentBalance = await token.balanceOf(user.address)
+			//check bal after saving
+			const initialSaveAssetERC20Balance = await saveAsset.connect(user).getErc20SavingsBalance()
 
 			// //withdraw - user calls withdraw
 			await saveAsset.connect(user).withdrawERC20(_amountToWithdraw)
+			const currentSaveAssetERC20Balance = await saveAsset.connect(user).getErc20SavingsBalance()
 
-			const difference = initialBalance - _amountToWithdraw
-			console.log(`CurrentBal: ${currentBalance}`)
-			console.log(`Difference: ${difference}`)
-			expect(currentBalance).to.equal(difference)
+			const sum = currentSaveAssetERC20Balance + _amountToWithdraw
+			// console.log(`initialSaveAssetERC20Balance: ${initialSaveAssetERC20Balance}`)
+			// console.log(`currentSaveAssetERC20Balance: ${currentSaveAssetERC20Balance}`)
+			// console.log(`sum: ${sum}`)
+			expect(initialSaveAssetERC20Balance).to.equal(sum)
 		})
 	})
 })
