@@ -38,4 +38,34 @@ describe("ERC20", function () {
 			expect(await token.balanceOf(owner.address)).to.equal(initialSupply)
 		})
 	})
+
+	/* ================= TRANSFER ================= */
+
+	describe("ERC20 transfer", function () {
+		it("Should transfer tokens successfully", async function () {
+			const { token, owner, user } = await loadFixture(deployFixture)
+
+			const amount = hre.ethers.parseEther("100")
+
+			await expect(token.transfer(user.address, amount))
+				.to.emit(token, "Transfer")
+				.withArgs(owner.address, user.address, amount)
+
+			expect(await token.balanceOf(user.address)).to.equal(amount)
+		})
+
+		it("Should revert if transferring zero", async function () {
+			const { token, user } = await loadFixture(deployFixture)
+
+			await expect(token.transfer(user.address, 0)).to.be.revertedWith("Can't send zero value")
+		})
+
+		it("Should revert if insufficient balance", async function () {
+			const { token, user } = await loadFixture(deployFixture)
+
+			const bigAmount = hre.ethers.parseEther("2000")
+
+			await expect(token.connect(user).transfer(user.address, bigAmount)).to.be.revertedWith("Insufficient funds")
+		})
+	})
 })
