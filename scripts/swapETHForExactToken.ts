@@ -1,19 +1,24 @@
-const helpers = require("@nomicfoundation/hardhat-network-helpers")
 import { ethers } from "hardhat"
+
 const main = async () => {
-	const USDCAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
 	const DAIAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
 	const WETHAddress = "0xC02aaA39b223FE8D0A0E5C4F27eAD9083C756Cc2"
-	const UNIRouter = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
+	const ROUTER = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
 
-	const TokenHolder = "0xf584f8728b874a6a5c7a8d4d387c9aae9172d621"
+	const [impersonatedSigner] = await ethers.getSigners()
+	const router = await ethers.getContractAt("IUniswapV2Router", ROUTER, impersonatedSigner)
 
-	await helpers.impersonateAccount(TokenHolder)
+	const DAI = await ethers.getContractAt("IERC20", DAIAddress, impersonatedSigner)
+	const WETH = await ethers.getContractAt("IERC20", WETHAddress, impersonatedSigner)
 
-	const impersonatedSigner = await ethers.getSigner(TokenHolder)
+	const path = [WETH, DAI]
+	const deadline = Math.floor(Date.now() / 1000) + 600
 
-	const USDC = await ethers.getContractAt("IERC20", USDCAddress, impersonatedSigner)
-	const ROUTER = await ethers.getContractAt("IUniswapV2Router", UNIRouter, impersonatedSigner)
+	await router.swapETHForExactTokens(ethers.parseUnits("1000", 18), path, impersonatedSigner.address, deadline, {
+		value: ethers.parseEther("5"),
+	})
+
+	console.log("Swap ETH For Exact Tokens successful")
 }
 
 main().catch((err) => {
