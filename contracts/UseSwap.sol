@@ -18,6 +18,10 @@ contract UseSwap {
 
     receive() external payable {}
 
+    /*//////////////////////////////////////////////////////////////
+                        Swaps
+    //////////////////////////////////////////////////////////////*/
+
     //swapTokensForExactTokens
     function handleSwap(uint256 amountOut, uint256 amountInMax, address[] calldata path, address to, uint256 deadline)
         external
@@ -84,6 +88,10 @@ contract UseSwap {
         swapCount++;
     }
 
+    /*//////////////////////////////////////////////////////////////
+                        LIQUIDITY
+    //////////////////////////////////////////////////////////////*/
+
     //addLiquidity
     function handleAddLiquidity(
         address tokenA,
@@ -105,5 +113,52 @@ contract UseSwap {
             .addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin, to, deadline);
 
         liquidityCount += 1;
+    }
+
+    //addLiquidityETH
+    function addLiquidityETH(
+        address token,
+        uint256 amountTokenDesired,
+        uint256 amountTokenMin,
+        uint256 amountETHMin,
+        address to,
+        uint256 deadline
+    ) external payable {
+        IERC20(token).transferFrom(msg.sender, address(this), amountTokenDesired);
+        require(IERC20(token).approve(uniswapRouter, amountTokenDesired), "Approve failed");
+
+        IUniswapV2Router(uniswapRouter).addLiquidityETH{value: msg.value}(
+            token, amountTokenDesired, amountTokenMin, amountETHMin, to, deadline
+        );
+        liquidityCount++;
+    }
+
+    // Remove liquidity
+    function removeLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 liquidity,
+        uint256 amountAMin,
+        uint256 amountBMin,
+        address to,
+        uint256 deadline
+    ) external {
+        address pair = IUniswapV2Router(uniswapRouter).factory();
+        IERC20(pair).transferFrom(msg.sender, address(this), liquidity);
+        require(IERC20(pair).approve(uniswapRouter, liquidity), "Approve failed");
+
+        IUniswapV2Router(uniswapRouter).removeLiquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            VIEW HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function getAmountsOut(uint256 amountIn, address[] calldata path) external view returns (uint256[] memory) {
+        return IUniswapV2Router(uniswapRouter).getAmountsOut(amountIn, path);
+    }
+
+    function getAmountsIn(uint256 amountOut, address[] calldata path) external view returns (uint256[] memory) {
+        return IUniswapV2Router(uniswapRouter).getAmountsIn(amountOut, path);
     }
 }
