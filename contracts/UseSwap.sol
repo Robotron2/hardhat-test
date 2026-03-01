@@ -48,6 +48,42 @@ contract UseSwap {
         swapCount += 1;
     }
 
+    //swapETHForExactTokens
+    function swapETHForExactTokens(uint256 amountOut, address[] calldata path, address to, uint256 deadline)
+        external
+        payable
+    {
+        IUniswapV2Router(uniswapRouter).swapETHForExactTokens{value: msg.value}(amountOut, path, to, deadline);
+        swapCount++;
+    }
+
+    //swapExactEthForTokens
+    function swapExactETHForTokens(uint256 amountOutMin, address[] calldata path, address to, uint256 deadline)
+        external
+        payable
+    {
+        require(path[0] != address(0), "Path must start with WETH");
+
+        IUniswapV2Router(uniswapRouter).swapExactETHForTokens{value: msg.value}(amountOutMin, path, to, deadline);
+
+        swapCount++;
+    }
+
+    //swapExactTokensForEth
+    function swapExactTokensForEth(
+        uint256 amountOut,
+        uint256 amountInMax,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external {
+        // transferFrom
+        IERC20(path[0]).transferFrom(msg.sender, address(this), amountInMax);
+        require(IERC20(path[0]).approve(uniswapRouter, amountInMax), "Approve failed");
+        IUniswapV2Router(uniswapRouter).swapTokensForExactETH(amountOut, amountInMax, path, to, deadline);
+        swapCount++;
+    }
+
     //addLiquidity
     function handleAddLiquidity(
         address tokenA,
@@ -69,30 +105,5 @@ contract UseSwap {
             .addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin, to, deadline);
 
         liquidityCount += 1;
-    }
-
-    //swapExactEthForTokens
-    function swapExactEthForTokens(uint256 amountOut, address[] calldata path, address to, uint256 deadline)
-        external
-        payable
-    {
-        require(path[0] != address(0), "Path must start with WETH");
-        IUniswapV2Router(uniswapRouter).swapETHForExactTokens{value: msg.value}(amountOut, path, to, deadline);
-        swapCount++;
-    }
-
-    //swapExactTokensForEth
-    function swapExactTokensForEth(
-        uint256 amountOut,
-        uint256 amountInMax,
-        address[] calldata path,
-        address to,
-        uint256 deadline
-    ) external {
-        // transferFrom
-        IERC20(path[0]).transferFrom(msg.sender, address(this), amountInMax);
-        require(IERC20(path[0]).approve(uniswapRouter, amountInMax), "Approve failed");
-        IUniswapV2Router(uniswapRouter).swapTokensForExactETH(amountOut, amountInMax, path, to, deadline);
-        swapCount++;
     }
 }
